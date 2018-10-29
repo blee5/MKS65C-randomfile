@@ -7,26 +7,15 @@
 
 int *rand_int(int n)
 {
-    int f = open("/dev/random", O_RDONLY);
+    int f = open("/dev/urandom", O_RDONLY);
     if (f < 0)
     {
-        printf("Error %d: %s\n", errno, strerror(errno));
         return 0;
     }
-
     unsigned int *arr = malloc(sizeof(int) * n);
-
-    int e = read(f, arr, sizeof(int) * n);
-    if (e < 0)
+    if (read(f, arr, sizeof(int) * n) < 0)
     {
-        printf("Error %d: %s\n", errno, strerror(errno));
         return 0;
-    }
-
-    int i = 0;
-    for (i = 0; i < n; i++)
-    {
-        printf("Random int #%d: %u\n", i, arr[i]);
     }
     close(f);
     return arr;
@@ -34,15 +23,47 @@ int *rand_int(int n)
 
 int main()
 {
-    int f = open("temp", O_CREAT | O_RDWR, 0600);
-    int e;
-    
-    e = write(f, rand_int(10), sizeof(int) * 10);
-    if (e < 0)
+    int NUM = 10;
+
+    int i;
+    int *p = rand_int(NUM);
+    if (!p)
     {
         printf("Error %d: %s\n", errno, strerror(errno));
-        return 0;
+        return 1;
     }
 
+    printf("Randomly generated numbers:\n");
+    for (i = 0; i < NUM; i++)
+    {
+        printf("Random int #%d: %u\n", i, p[i]);
+    }
+
+    int f = open("temp", O_RDWR | O_CREAT | O_TRUNC, 0600);
+    if (f < 0)
+    {
+        printf("Error %d: %s\n", errno, strerror(errno));
+    }
+    
+    printf("Writing to file..\n");
+    if (write(f, p, sizeof(int) * NUM) < 0)
+    {
+        printf("Error %d: %s\n", errno, strerror(errno));
+        return 1;
+    }
+
+    printf("Reading from file..\n");
+    if (read(f, p, sizeof(int) * NUM) < 0)
+    {
+        printf("Error %d: %s\n", errno, strerror(errno));
+        return 1;
+    }
+
+    for (i = 0; i < NUM; i++)
+    {
+        printf("Reading int #%d: %u\n", i, p[i]);
+    }
+
+    free(p);
     return 0;
 }
